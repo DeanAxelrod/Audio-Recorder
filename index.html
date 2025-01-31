@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agora Voice Recorder</title>
+    <script src="https://cdn.agora.io/sdk/release/AgoraRTCSDK-3.6.9.js"></script>
+</head>
+<body>
+    <h1>Agora Voice Recorder</h1>
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+    <p id="status">Status: Idle</p>
+
+    <script>
+        // Agora App ID (replace with your own)
+        const appId = "25336bcd01664c70870804ba0b7e1b30";
+        const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+        let localStream;
+
+        // Initialize Agora
+        client.init(appId, () => {
+            console.log("Agora initialized");
+            document.getElementById("status").innerText = "Status: Ready";
+        });
+
+        // Start Recording
+        document.getElementById("startBtn").onclick = async () => {
+            try {
+                // Join a channel
+                const channelName = "test_channel";
+                const uid = await client.join(null, channelName, null);
+                console.log("User joined with UID:", uid);
+
+                // Create and publish local stream
+                localStream = AgoraRTC.createStream({ audio: true, video: false });
+                await localStream.init();
+                client.publish(localStream);
+                console.log("Recording started");
+
+                // Update UI
+                document.getElementById("status").innerText = "Status: Recording";
+                document.getElementById("startBtn").disabled = true;
+                document.getElementById("stopBtn").disabled = false;
+            } catch (error) {
+                console.error("Error starting recording:", error);
+            }
+        };
+
+        // Stop Recording
+        document.getElementById("stopBtn").onclick = async () => {
+            try {
+                // Unpublish and leave the channel
+                client.unpublish(localStream);
+                await client.leave();
+                localStream.close();
+                console.log("Recording stopped");
+
+                // Update UI
+                document.getElementById("status").innerText = "Status: Stopped";
+                document.getElementById("startBtn").disabled = false;
+                document.getElementById("stopBtn").disabled = true;
+            } catch (error) {
+                console.error("Error stopping recording:", error);
+            }
+        };
+    </script>
+</body>
+</html>
