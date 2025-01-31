@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder</title>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+</head>
+<body>
+
+<h1>Audio Recorder</h1>
+<button id="startRecordingBtn">Start Recording</button>
+<button id="stopRecordingBtn" disabled>Stop Recording</button>
+<audio id="audioPlayer" controls></audio>
+
+<script>
+    // Agora configuration
+    const APP_ID = '25336bcd01664c70870804ba0b7e1b30'; // Replace with your Agora App ID
+    const CHANNEL_NAME = 'AI Pet Translator'; // Channel name (you can use dynamic names)
+    const UID = Math.floor(Math.random() * 10000); // Random user ID
+
+    let client, localStream;
+
+    // Initialize Agora client
+    function initAgoraClient() {
+        client = AgoraRTC.createClient({ mode: "live", codec: "opus" });
+        
+        // Join the channel
+        client.join(APP_ID, CHANNEL_NAME, UID, (uid) => {
+            console.log("Joined channel successfully", uid);
+            startLocalRecording();
+        }, (err) => {
+            console.error("Error joining channel", err);
+        });
+    }
+
+    // Start recording
+    function startLocalRecording() {
+        localStream = AgoraRTC.createStream({
+            streamID: UID,
+            audio: true,
+            video: false
+        });
+
+        localStream.init(() => {
+            localStream.play('audioPlayer');
+            console.log("Local stream initialized");
+        }, (err) => {
+            console.error("Error initializing stream", err);
+        });
+    }
+
+    // Stop recording
+    function stopRecording() {
+        client.leave(() => {
+            console.log("Left channel successfully");
+            localStream.stop();
+            localStream.close();
+            document.getElementById('audioPlayer').src = localStream.getAudioTrack().getTracks()[0].mediaStreamTrack;
+        }, (err) => {
+            console.error("Error leaving channel", err);
+        });
+    }
+
+    // Event listeners for buttons
+    document.getElementById('startRecordingBtn').addEventListener('click', () => {
+        initAgoraClient();
+        document.getElementById('startRecordingBtn').disabled = true;
+        document.getElementById('stopRecordingBtn').disabled = false;
+    });
+
+    document.getElementById('stopRecordingBtn').addEventListener('click', stopRecording);
+</script>
+
+</body>
+</html>
